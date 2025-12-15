@@ -28,7 +28,6 @@
         <a
           href="{% url 'quizzes:choose_difficulty' child.id %}"
           class="wizard-card"
-          style="text-decoration: none; color: inherit"
         >
           🔹 <strong>{{ child.name }}</strong>
           <p>
@@ -41,7 +40,6 @@
         <a
           href="{% url 'quizzes:subcategory_children' child.id %}"
           class="wizard-card"
-          style="text-decoration: none; color: inherit"
         >
           📁 <strong>{{ child.name }}</strong>
           <p>
@@ -58,7 +56,6 @@
       <div style="margin-top: 20px; text-align: center">
         <a
           href="{% url 'quizzes:subcategories' parent.category.id %}"
-          style="color: #666; text-decoration: none"
         >
           ← Back to {{ parent.category.name }}
         </a>

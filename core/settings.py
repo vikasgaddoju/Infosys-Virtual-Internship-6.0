@@ -169,4 +169,4 @@ MEDIA_URL = '/media/'
 
 import os
 
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")

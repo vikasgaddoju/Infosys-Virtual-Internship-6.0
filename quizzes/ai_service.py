@@ -5,9 +5,10 @@ import requests
 from django.conf import settings
 
 
-GROQ_API_KEY = settings.GROQ_API_KEY
-GROQ_MODEL = "llama-3.3-70b-versatile"
-GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
+OPENAI_API_KEY = settings.OPENAI_API_KEY
+OPENAI_MODEL = "gpt-3.5-turbo"
+OPENAI_URL = "https://api.openai.com/v1/chat/completions"
+
 
 
 def clean_json(text: str) -> str:
@@ -58,8 +59,9 @@ def generate_quiz_questions(topic, category, difficulty, count=10):
     Generate MCQs using Groq (LLaMA-3.3 70B versatile)
     """
 
-    if not GROQ_API_KEY:
-        raise Exception("GROQ_API_KEY not found in settings. Add it to your .env file.")
+    if not OPENAI_API_KEY:
+        raise Exception("OPENAI_API_KEY not found in settings.")
+
 
     prompt = f"""
 Generate {count} multiple choice questions in STRICT JSON format.
@@ -87,13 +89,13 @@ Return ONLY the JSON array. No text outside JSON.
 
     try:
         response = requests.post(
-            GROQ_URL,
+            OPENAI_URL,
             headers={
-                "Authorization": f"Bearer {GROQ_API_KEY}",
+                "Authorization": f"Bearer {OPENAI_API_KEY}",
                 "Content-Type": "application/json",
             },
             json={
-                "model": GROQ_MODEL,
+                "model": OPENAI_MODEL,
                 "messages": [
                     {"role": "user", "content": prompt}
                 ],

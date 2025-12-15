@@ -31,6 +31,9 @@ class SubCategory(models.Model):
         return f"{self.category.name} - {self.name}"
 
 class QuizAttempt(models.Model):
+    correct_answers = models.SmallIntegerField(default=0)
+    attempted_questions = models.SmallIntegerField(default=0)
+    time_taken_seconds = models.IntegerField(default=0)
     # Status choices
     STATUS_GENERATING = 0
     STATUS_IN_PROGRESS = 1

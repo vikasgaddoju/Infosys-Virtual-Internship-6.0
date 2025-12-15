@@ -1,9 +1,15 @@
+
 body {
     font-family: "Inter", sans-serif;
     background: #f4f7ff;
     padding: 30px;
 }
 
+
+/* Back link styling */
+.wizard-container a {
+  text-decoration: none;
+}
 .wizard-container {
     max-width: 780px;
     margin: auto;
@@ -104,4 +110,14 @@ body {
 .start-btn:hover {
     transform: translateY(-5px);
     background: #4338ca;
+}
+
+/* FORCE remove underline from wizard cards */
+.wizard-card,
+.wizard-card *,
+.wizard-card:visited,
+.wizard-card:hover,
+.wizard-card:active {
+    text-decoration: none !important;
+    color: inherit;
 }

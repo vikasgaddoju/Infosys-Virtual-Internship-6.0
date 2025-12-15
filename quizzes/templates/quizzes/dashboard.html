@@ -10,7 +10,6 @@
       href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
     />
-
     <link
       href="https://cdn.jsdelivr.net/npm/remixicon/fonts/remixicon.css"
       rel="stylesheet"
@@ -24,7 +23,6 @@
         color: #1a1a1a;
       }
 
-      /* NAVBAR */
       .navbar {
         background: white;
         padding: 18px 40px;
@@ -50,26 +48,22 @@
         color: #333;
       }
 
-      /* MAIN SECTION */
       .dashboard-container {
         padding: 40px;
       }
 
-      /* WELCOME CARD STRUCTURE UPDATE */
       .welcome-card {
         background: linear-gradient(135deg, #4f46e5, #6d28d9);
         border-radius: 18px;
         padding: 35px;
         color: white;
         box-shadow: 0 10px 30px rgba(79, 70, 229, 0.25);
-        animation: fadeSlide 0.8s ease forwards;
       }
 
-      /* NEW: Flex container for avatar and welcome text */
       .welcome-header {
         display: flex;
         align-items: center;
-        gap: 25px; /* Space between avatar and text */
+        gap: 25px;
       }
 
       .welcome-title {
@@ -84,47 +78,27 @@
         margin-top: 8px;
       }
 
-      /* NEW: AVATAR STYLES */
       .user-avatar {
         width: 70px;
         height: 70px;
-        border-radius: 50%; /* Make it circular */
-        object-fit: cover; /* Ensure image scales correctly */
-        border: 3px solid rgba(255, 255, 255, 0.5); /* Light border */
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid rgba(255, 255, 255, 0.5);
       }
 
       .user-avatar-placeholder {
         width: 70px;
         height: 70px;
         border-radius: 50%;
-        background-color: rgba(
-          255,
-          255,
-          255,
-          0.2
-        ); /* Semi-transparent white background */
+        background-color: rgba(255, 255, 255, 0.2);
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 30px;
         font-weight: 700;
         color: white;
-        flex-shrink: 0; /* Prevents the placeholder from shrinking */
       }
 
-      @keyframes fadeSlide {
-        from {
-          opacity: 0;
-          transform: translateY(30px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-
-      /* GRID CARDS */
-      /* ... (Rest of your existing CSS remains the same) ... */
       .grid {
         margin-top: 35px;
         display: grid;
@@ -138,12 +112,10 @@
         border-radius: 16px;
         box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
         transition: 0.25s ease;
-        cursor: pointer;
       }
 
       .card:hover {
         transform: translateY(-6px);
-        box-shadow: 0 12px 26px rgba(0, 0, 0, 0.1);
       }
 
       .card-icon {
@@ -163,7 +135,6 @@
         font-size: 14px;
       }
 
-      /* QUICK STATS */
       .stats {
         margin-top: 40px;
         display: flex;
@@ -178,11 +149,6 @@
         padding: 22px;
         border-radius: 16px;
         box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
-        transition: 0.25s ease;
-      }
-
-      .stat-card:hover {
-        transform: translateY(-6px);
       }
 
       .stat-number {
@@ -209,70 +175,78 @@
     </div>
 
     <div class="dashboard-container">
+      <!-- WELCOME -->
       <div class="welcome-card">
         <div class="welcome-header">
           {% if request.user.avatar_path %}
-          <img
-            src="{{ request.user.avatar_path.url }}"
-            alt="{{ request.user.username }} Avatar"
-            class="user-avatar"
-          />
+            <img src="{{ request.user.avatar_path.url }}" class="user-avatar" />
           {% else %}
-          <div class="user-avatar-placeholder">
-            {{ request.user.username|slice:":1"|upper }}
-          </div>
+            <div class="user-avatar-placeholder">
+              {{ request.user.username|slice:":1"|upper }}
+            </div>
           {% endif %}
-          <div class="welcome-text">
+          <div>
             <div class="welcome-title">
               Welcome back, {{ request.user.username }} 👋
             </div>
             <div class="welcome-sub">
-              Continue your learning journey with AI-powered quizzes.
+              Track your quiz performance and improve daily.
             </div>
           </div>
         </div>
       </div>
 
+      <!-- QUICK ACTIONS -->
       <div class="grid">
         <div class="card">
           <div class="card-icon"><i class="ri-book-open-line"></i></div>
-          <div class="card-title">Start New Quiz</div>
-          <div class="card-desc">Choose a category & difficulty level.</div>
+          <div class="card-title">
+            <a href="{% url 'quizzes:categories' %}" style="text-decoration:none;color:inherit;">
+              Start New Quiz
+            </a>
+          </div>
+          <div class="card-desc">Choose category & difficulty.</div>
         </div>
 
         <div class="card">
           <div class="card-icon"><i class="ri-bar-chart-2-line"></i></div>
-          <div class="card-title">Performance Report</div>
-          <div class="card-desc">See your improvements & analytics.</div>
+          <div class="card-title">Performance Analytics</div>
+          <div class="card-desc">View score trends & insights.</div>
         </div>
 
         <div class="card">
           <div class="card-icon"><i class="ri-history-line"></i></div>
-          <div class="card-title">Resume Previous Quiz</div>
-          <div class="card-desc">Pick up right where you left off.</div>
+          <div class="card-title">Recent Attempts</div>
+          <div class="card-desc">{{ recent_quizzes|length }} recent quizzes</div>
         </div>
 
         <div class="card">
           <div class="card-icon"><i class="ri-settings-3-line"></i></div>
           <div class="card-title">Preferences</div>
-          <div class="card-desc">Set difficulty, topics & goals.</div>
+          <div class="card-desc">Customize your quiz experience.</div>
         </div>
       </div>
 
+      <!-- STATS -->
       <div class="stats">
         <div class="stat-card">
-          <div class="stat-number">12</div>
+          <div class="stat-number">{{ total_completed }}</div>
           <div class="stat-label">Quizzes Completed</div>
         </div>
 
         <div class="stat-card">
-          <div class="stat-number">87%</div>
-          <div class="stat-label">Avg Accuracy</div>
+          <div class="stat-number">{{ avg_score }}%</div>
+          <div class="stat-label">Average Score</div>
         </div>
 
         <div class="stat-card">
-          <div class="stat-number">4</div>
-          <div class="stat-label">Active Streak (Days)</div>
+          <div class="stat-number">{{ best_score }}%</div>
+          <div class="stat-label">Best Score</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-number">{{ completion_rate }}%</div>
+          <div class="stat-label">Completion Rate</div>
         </div>
       </div>
     </div>

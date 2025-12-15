@@ -52,15 +52,10 @@
           ),
           var(--bg);
         color: #e6eef8;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-        padding: 32px 20px;
-        box-sizing: border-box;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 24px;
-        min-height: 100vh;
+
+        /* 🔑 FIX */
+        display: block;
+        overflow-y: auto;
       }
 
       .container {
@@ -70,6 +65,8 @@
         grid-template-columns: 1fr 380px;
         gap: 28px;
         align-items: start;
+        margin: 0 auto;
+        padding-top: 32px;
       }
 
       /* Left: Question card */
@@ -337,8 +334,7 @@
             <div class="badge">Quiz</div>
             <div>
               <h1 id="quiz-title" class="title">
-                {% if quiz_attempt and quiz_attempt.subcategory %} {{
-                quiz_attempt.subcategory.name }} {% else %} Untitled {% endif %}
+                {% if quiz_attempt %} {{ quiz_attempt.subcategory.name }} {%else %} — {% endif %}
               </h1>
 
               <p class="sub">
@@ -349,9 +345,7 @@
                 </strong>
                 · Question
                 <span id="meta-qno">{{ question_number|default:1 }}</span> of
-                <span id="meta-total"
-                  >{{ total_questions|default:quiz_attempt.total_questions
-                  }}</span
+                <span id="meta-total">{{total_questions|default:quiz_attempt.total_questions}}</span
                 >
               </p>
             </div>

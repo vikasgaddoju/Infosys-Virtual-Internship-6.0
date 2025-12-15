@@ -1,8 +1,12 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
+from django.db.models import Avg, Max, Min, Sum, Count
+from django.db.models.functions import Coalesce
 from .models import Category, SubCategory, QuizAttempt
 from django.http import JsonResponse
 from django.utils import timezone
+from datetime import timedelta
+from .models import QuizAttempt
 from django.views.decorators.http import require_POST
 import json
 
@@ -11,10 +15,65 @@ import json
 # ============================================================
 @login_required
 def dashboard(request):
-    return render(request, "quizzes/dashboard.html", {
-        "username": request.user.username,
-        "title": "User Dashboard"
-    })
+    user = request.user
+
+    # Base queryset: only completed quizzes
+    completed_qs = QuizAttempt.objects.filter(
+        user=user,
+        status=QuizAttempt.STATUS_COMPLETED
+    )
+
+    total_attempted = QuizAttempt.objects.filter(user=user).count()
+    total_completed = completed_qs.count()
+
+    completion_rate = (
+        (total_completed / total_attempted) * 100
+        if total_attempted > 0 else 0
+    )
+
+    score_stats = completed_qs.aggregate(
+        avg_score=Coalesce(Avg('score'), 0.0),
+        best_score=Coalesce(Max('score'), 0.0),
+        worst_score=Coalesce(Min('score'), 0.0),
+    )
+
+    difficulty_stats = completed_qs.values('difficulty').annotate(
+        quizzes=Count('id'),
+        avg_score=Avg('score')
+    ).order_by('difficulty')
+
+    category_stats = completed_qs.values(
+        'category__name'
+    ).annotate(
+        quizzes=Count('id'),
+        avg_score=Avg('score')
+    ).order_by('-avg_score')
+
+    recent_quizzes = completed_qs.select_related(
+        'category', 'subcategory'
+    ).order_by('-completed_at')[:10]
+
+    last_7_days = completed_qs.filter(
+        completed_at__gte=timezone.now() - timedelta(days=7)
+    ).count()
+
+    context = {
+        "total_attempted": total_attempted,
+        "total_completed": total_completed,
+        "completion_rate": round(completion_rate, 2),
+
+        "avg_score": round(score_stats["avg_score"], 2),
+        "best_score": score_stats["best_score"],
+        "worst_score": score_stats["worst_score"],
+
+        "difficulty_stats": difficulty_stats,
+        "category_stats": category_stats,
+        "recent_quizzes": recent_quizzes,
+
+        "last_7_days": last_7_days,
+    }
+    return render(request, "quizzes/dashboard.html", context)
+
 
 
 # ============================================================
@@ -196,7 +255,7 @@ def generate_questions(request, attempt_id):
         quiz_attempt.questions = formatted_questions
         quiz_attempt.status = QuizAttempt.STATUS_IN_PROGRESS
         quiz_attempt.ai_meta = {
-            'model': 'claude-sonnet-4',
+            'model': 'gpt-3.5-turbo',
             'generated_at': timezone.now().isoformat(),
         }
         quiz_attempt.save()
@@ -277,16 +336,14 @@ def submit_answer(request, attempt_id):
     
     # Check if quiz is complete
     if quiz_attempt.is_quiz_complete():
-        quiz_attempt.status = QuizAttempt.STATUS_COMPLETED
-        quiz_attempt.completed_at = timezone.now()
-        quiz_attempt.calculate_score()
-        quiz_attempt.save()
-        
+        finalize_quiz_attempt(quiz_attempt)
+
         return JsonResponse({
             'success': True,
             'completed': True,
             'redirect_url': f'/quiz/attempt/{quiz_attempt.id}/results/'
         })
+
     
     return JsonResponse({
         'success': True,
@@ -328,3 +385,39 @@ def quiz_results(request, attempt_id):
         "percentage": percentage,
         "grade": grade,
     })
+
+def finalize_quiz_attempt(quiz_attempt):
+    """
+    Finalize quiz attempt:
+    - calculate correct / attempted
+    - calculate score
+    - calculate time taken
+    - mark completed
+    """
+    questions = quiz_attempt.questions or []
+
+    attempted = 0
+    correct = 0
+
+    for q in questions:
+        if q.get("user_answer") is not None:
+            attempted += 1
+            if q.get("is_correct") is True:
+                correct += 1
+
+    quiz_attempt.attempted_questions = attempted
+    quiz_attempt.correct_answers = correct
+
+    quiz_attempt.score = (
+        (correct / quiz_attempt.total_questions) * 100
+        if quiz_attempt.total_questions > 0 else 0
+    )
+
+    quiz_attempt.completed_at = timezone.now()
+    quiz_attempt.status = QuizAttempt.STATUS_COMPLETED
+
+    quiz_attempt.time_taken_seconds = int(
+        (quiz_attempt.completed_at - quiz_attempt.started_at).total_seconds()
+    )
+
+    quiz_attempt.save()
