@@ -159,3 +159,14 @@ class Question(models.Model):
 
     def __str__(self):
         return self.question_text[:60]
+
+class Concept(models.Model):
+    subcategory = models.ForeignKey(SubCategory, on_delete=models.CASCADE)
+    difficulty = models.CharField(max_length=10)
+    name = models.CharField(max_length=100)
+
+    class Meta:
+        unique_together = ('subcategory', 'difficulty', 'name')
+
+    def __str__(self):
+        return self.name
