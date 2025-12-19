@@ -161,12 +161,26 @@ class Question(models.Model):
         return self.question_text[:60]
 
 class Concept(models.Model):
-    subcategory = models.ForeignKey(SubCategory, on_delete=models.CASCADE)
-    difficulty = models.CharField(max_length=10)
-    name = models.CharField(max_length=100)
+    subcategory = models.ForeignKey(
+        SubCategory,
+        on_delete=models.CASCADE,
+        related_name="concepts"
+    )
+    difficulty = models.CharField(
+        max_length=10,
+        choices=[
+            ('easy', 'Easy'),
+            ('medium', 'Medium'),
+            ('hard', 'Hard')
+        ]
+    )
+    name = models.CharField(max_length=150)
+
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         unique_together = ('subcategory', 'difficulty', 'name')
+        ordering = ['name']
 
     def __str__(self):
-        return self.name
+        return f"{self.subcategory.name} - {self.name} ({self.difficulty})"
