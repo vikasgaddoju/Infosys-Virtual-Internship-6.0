@@ -3,7 +3,8 @@ import uuid
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
-
+import hashlib
+import re
 class Category(models.Model):
     name = models.CharField(max_length=150, unique=True)
     description = models.TextField(blank=True)
@@ -120,3 +121,41 @@ class QuizAttempt(models.Model):
         if not self.questions:
             return False
         return all(q.get('user_answer') is not None for q in self.questions)
+    
+class Question(models.Model):
+    category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    subcategory = models.ForeignKey(SubCategory, on_delete=models.CASCADE)
+    difficulty = models.CharField(max_length=10)
+
+    question_text = models.TextField()
+    option_a = models.TextField()
+    option_b = models.TextField()
+    option_c = models.TextField()
+    option_d = models.TextField()
+    correct_answer = models.CharField(max_length=1)
+    explanation = models.TextField()
+
+    normalized_hash = models.CharField(max_length=64, db_index=True, unique=True)
+
+    source = models.CharField(
+        max_length=10,
+        choices=[('ai', 'AI'), ('manual', 'Manual')],
+        default='ai'
+    )
+
+    usage_count = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    @staticmethod
+    def normalize(text):
+        text = text.lower()
+        text = re.sub(r'[^a-z0-9 ]+', '', text)
+        text = re.sub(r'\s+', ' ', text).strip()
+        return text
+
+    @classmethod
+    def make_hash(cls, text):
+        return hashlib.sha256(cls.normalize(text).encode()).hexdigest()
+
+    def __str__(self):
+        return self.question_text[:60]

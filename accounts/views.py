@@ -57,20 +57,20 @@ class CustomLoginView(LoginView):
 @login_required
 def profile_view(request):
     if request.method == 'POST':
-        u_form = UserUpdateForm(request.POST, request.FILES, instance=request.user)
-
-        if u_form.is_valid():
-            u_form.save()
-            messages.success(request, "Profile updated successfully.")
+        form = UserUpdateForm(
+            request.POST,
+            request.FILES,
+            instance=request.user
+        )
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Profile updated")
             return redirect('accounts:profile')
-
     else:
-        u_form = UserUpdateForm(instance=request.user)
+        form = UserUpdateForm(instance=request.user)
 
-    return render(request, 'accounts/profile.html', {
-        'u_form': u_form,
-        'user': request.user,
-    })
+    return render(request, 'accounts/profile.html', {'u_form': form})
+
 
 
 # ---------------------------

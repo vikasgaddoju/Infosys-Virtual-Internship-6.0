@@ -75,7 +75,6 @@ def dashboard(request):
     return render(request, "quizzes/dashboard.html", context)
 
 
-
 # ============================================================
 # STEP 1 — SHOW ALL MAIN CATEGORIES (e.g. Academic, GK, Ent)
 # ============================================================
@@ -350,7 +349,6 @@ def submit_answer(request, attempt_id):
         'completed': False,
         'redirect_url': f'/quiz/attempt/{quiz_attempt.id}/question/'
     })
-
 
 @login_required
 def quiz_results(request, attempt_id):

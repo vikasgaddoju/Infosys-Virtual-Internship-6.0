@@ -7,7 +7,7 @@ urlpatterns = [
     path("dashboard/", views.dashboard, name="dashboard"),
     path("categories/", views.category_list, name="categories"),
     path("category/<int:category_id>/", views.choose_subcategory, name="subcategories"),
-    path("subcategory/<int:sub_id>/children/", views.subcategory_children, name="subcategory_children"),  # ← ADD THIS LINE
+    path("subcategory/<int:sub_id>/children/", views.subcategory_children, name="subcategory_children"),  
     path("subcategory/<int:subcategory_id>/difficulty/", 
          views.choose_difficulty, 
          name="choose_difficulty"),
