@@ -6,7 +6,7 @@ from .models import Category, SubCategory, QuizAttempt
 from django.http import JsonResponse
 from django.utils import timezone
 from datetime import timedelta
-from .models import QuizAttempt
+from .models import QuizAttempt, Question
 from django.views.decorators.http import require_POST
 import json
 
@@ -234,21 +234,45 @@ def generate_questions(request, attempt_id):
             count=quiz_attempt.total_questions
         )
         
-        # Format questions with IDs and empty user_answer fields
         formatted_questions = []
-        for idx, q in enumerate(questions_data, start=1):
+        question_id = 1
+
+        for q in questions_data:
+            q_hash = Question.make_hash(q["question"])
+
+            # Skip duplicates (hard block)
+            if Question.objects.filter(normalized_hash=q_hash).exists():
+                continue
+
+            question_obj = Question.objects.create(
+                category=quiz_attempt.category,
+                subcategory=quiz_attempt.subcategory,
+                difficulty=quiz_attempt.difficulty,
+                question_text=q["question"],
+                option_a=q["option_a"],
+                option_b=q["option_b"],
+                option_c=q["option_c"],
+                option_d=q["option_d"],
+                correct_answer=q["correct_answer"],
+                explanation=q.get("explanation", ""),
+                normalized_hash=q_hash,
+            )
+
             formatted_questions.append({
-                'id': idx,
-                'question': q['question'],
-                'option_a': q['option_a'],
-                'option_b': q['option_b'],
-                'option_c': q['option_c'],
-                'option_d': q['option_d'],
-                'correct_answer': q['correct_answer'],
-                'explanation': q.get('explanation', ''),
-                'user_answer': None,
-                'is_correct': None
+                "id": question_id,
+                "question": question_obj.question_text,
+                "option_a": question_obj.option_a,
+                "option_b": question_obj.option_b,
+                "option_c": question_obj.option_c,
+                "option_d": question_obj.option_d,
+                "correct_answer": question_obj.correct_answer,
+                "explanation": question_obj.explanation,
+                "user_answer": None,
+                "is_correct": None
             })
+
+            question_id += 1
+
         
         # Save questions to quiz attempt
         quiz_attempt.questions = formatted_questions
