@@ -214,89 +214,107 @@ def generate_questions(request, attempt_id):
     AJAX endpoint to generate questions using AI
     """
     quiz_attempt = get_object_or_404(QuizAttempt, id=attempt_id, user=request.user)
-    
+
     # Check if questions already generated
     if quiz_attempt.questions:
         return JsonResponse({
             'success': True,
             'redirect_url': f'/quiz/attempt/{quiz_attempt.id}/question/'
         })
-    
+
     try:
-        # Import here to avoid circular imports
         from .ai_service import generate_quiz_questions
-        
-        # Generate questions via AI
-        questions_data = generate_quiz_questions(
-            topic=quiz_attempt.subcategory.name,
-            category=quiz_attempt.category.name,
-            difficulty=quiz_attempt.difficulty,
-            count=quiz_attempt.total_questions
-        )
-        
+        from .models import Question
+
+        REQUIRED_QUESTIONS = quiz_attempt.total_questions  # usually 10
+        MAX_RETRIES = 5
+        retry_count = 0
+
         formatted_questions = []
         question_id = 1
 
-        for q in questions_data:
-            q_hash = Question.make_hash(q["question"])
+        # 🔁 RETRY LOOP (NEW)
+        while len(formatted_questions) < REQUIRED_QUESTIONS and retry_count < MAX_RETRIES:
+            retry_count += 1
 
-            # Skip duplicates (hard block)
-            if Question.objects.filter(normalized_hash=q_hash).exists():
-                continue
-
-            question_obj = Question.objects.create(
-                category=quiz_attempt.category,
-                subcategory=quiz_attempt.subcategory,
+            questions_data = generate_quiz_questions(
+                topic=quiz_attempt.subcategory.name,
+                category=quiz_attempt.category.name,
                 difficulty=quiz_attempt.difficulty,
-                question_text=q["question"],
-                option_a=q["option_a"],
-                option_b=q["option_b"],
-                option_c=q["option_c"],
-                option_d=q["option_d"],
-                correct_answer=q["correct_answer"],
-                explanation=q.get("explanation", ""),
-                normalized_hash=q_hash,
+                count=REQUIRED_QUESTIONS
             )
 
-            formatted_questions.append({
-                "id": question_id,
-                "question": question_obj.question_text,
-                "option_a": question_obj.option_a,
-                "option_b": question_obj.option_b,
-                "option_c": question_obj.option_c,
-                "option_d": question_obj.option_d,
-                "correct_answer": question_obj.correct_answer,
-                "explanation": question_obj.explanation,
-                "user_answer": None,
-                "is_correct": None
-            })
+            for q in questions_data:
+                if len(formatted_questions) >= REQUIRED_QUESTIONS:
+                    break
 
-            question_id += 1
+                q_hash = Question.make_hash(q["question"])
 
-        
-        # Save questions to quiz attempt
+                # Skip duplicates
+                if Question.objects.filter(normalized_hash=q_hash).exists():
+                    continue
+
+                question_obj = Question.objects.create(
+                    category=quiz_attempt.category,
+                    subcategory=quiz_attempt.subcategory,
+                    difficulty=quiz_attempt.difficulty,
+                    question_text=q["question"],
+                    option_a=q["option_a"],
+                    option_b=q["option_b"],
+                    option_c=q["option_c"],
+                    option_d=q["option_d"],
+                    correct_answer=q["correct_answer"],
+                    explanation=q.get("explanation", ""),
+                    normalized_hash=q_hash,
+                )
+
+                formatted_questions.append({
+                    "id": question_id,
+                    "question": question_obj.question_text,
+                    "option_a": question_obj.option_a,
+                    "option_b": question_obj.option_b,
+                    "option_c": question_obj.option_c,
+                    "option_d": question_obj.option_d,
+                    "correct_answer": question_obj.correct_answer,
+                    "explanation": question_obj.explanation,
+                    "user_answer": None,
+                    "is_correct": None
+                })
+
+                question_id += 1
+
+        # ❌ Could not generate enough unique questions
+        if len(formatted_questions) < REQUIRED_QUESTIONS:
+            quiz_attempt.status = QuizAttempt.STATUS_ABANDONED
+            quiz_attempt.save()
+            return JsonResponse({
+                'success': False,
+                'error': 'Could not generate enough unique questions. Please try again.'
+            }, status=500)
+
+        # ✅ Save questions to quiz attempt
         quiz_attempt.questions = formatted_questions
         quiz_attempt.status = QuizAttempt.STATUS_IN_PROGRESS
         quiz_attempt.ai_meta = {
             'model': 'gpt-3.5-turbo',
             'generated_at': timezone.now().isoformat(),
+            'retries': retry_count
         }
         quiz_attempt.save()
-        
+
         return JsonResponse({
             'success': True,
             'redirect_url': f'/quiz/attempt/{quiz_attempt.id}/question/'
         })
-        
+
     except Exception as e:
         quiz_attempt.status = QuizAttempt.STATUS_ABANDONED
         quiz_attempt.save()
-        
+
         return JsonResponse({
             'success': False,
             'error': str(e)
         }, status=500)
-
 
 @login_required
 def show_question(request, attempt_id):
