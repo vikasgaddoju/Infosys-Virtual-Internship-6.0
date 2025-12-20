@@ -14,154 +14,8 @@
       href="https://cdn.jsdelivr.net/npm/remixicon/fonts/remixicon.css"
       rel="stylesheet"
     />
-
-    <style>
-      body {
-        margin: 0;
-        font-family: "Poppins", sans-serif;
-        background: #f5f7fb;
-        color: #1a1a1a;
-      }
-
-      .navbar {
-        background: white;
-        padding: 18px 40px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
-        position: sticky;
-        top: 0;
-        z-index: 100;
-      }
-
-      .brand {
-        font-size: 24px;
-        font-weight: 700;
-        color: #4f46e5;
-      }
-
-      .nav-links a {
-        text-decoration: none;
-        margin-left: 20px;
-        font-weight: 500;
-        color: #333;
-      }
-
-      .dashboard-container {
-        padding: 40px;
-      }
-
-      .welcome-card {
-        background: linear-gradient(135deg, #4f46e5, #6d28d9);
-        border-radius: 18px;
-        padding: 35px;
-        color: white;
-        box-shadow: 0 10px 30px rgba(79, 70, 229, 0.25);
-      }
-
-      .welcome-header {
-        display: flex;
-        align-items: center;
-        gap: 25px;
-      }
-
-      .welcome-title {
-        font-size: 30px;
-        font-weight: 600;
-        margin-top: 0;
-      }
-
-      .welcome-sub {
-        opacity: 0.9;
-        font-size: 16px;
-        margin-top: 8px;
-      }
-
-      .user-avatar {
-        width: 70px;
-        height: 70px;
-        border-radius: 50%;
-        object-fit: cover;
-        border: 3px solid rgba(255, 255, 255, 0.5);
-      }
-
-      .user-avatar-placeholder {
-        width: 70px;
-        height: 70px;
-        border-radius: 50%;
-        background-color: rgba(255, 255, 255, 0.2);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 30px;
-        font-weight: 700;
-        color: white;
-      }
-
-      .grid {
-        margin-top: 35px;
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-        gap: 25px;
-      }
-
-      .card {
-        background: white;
-        padding: 22px;
-        border-radius: 16px;
-        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
-        transition: 0.25s ease;
-      }
-
-      .card:hover {
-        transform: translateY(-6px);
-      }
-
-      .card-icon {
-        font-size: 34px;
-        color: #4f46e5;
-      }
-
-      .card-title {
-        margin-top: 12px;
-        font-size: 20px;
-        font-weight: 600;
-      }
-
-      .card-desc {
-        margin-top: 6px;
-        color: #555;
-        font-size: 14px;
-      }
-
-      .stats {
-        margin-top: 40px;
-        display: flex;
-        gap: 20px;
-        flex-wrap: wrap;
-      }
-
-      .stat-card {
-        flex: 1;
-        min-width: 200px;
-        background: white;
-        padding: 22px;
-        border-radius: 16px;
-        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
-      }
-
-      .stat-number {
-        font-size: 32px;
-        font-weight: 700;
-        color: #4f46e5;
-      }
-
-      .stat-label {
-        margin-top: 6px;
-        color: #666;
-      }
-    </style>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'quizzes/css/dashboard.css' %}" />
   </head>
 
   <body>
@@ -189,7 +43,7 @@
             <div class="welcome-title">
               Welcome back, {{ request.user.username }} 👋
             </div>
-            <div class="welcome-sub">
+            <div class="welcome-sub" ,>
               Track your quiz performance and improve daily.
             </div>
           </div>
@@ -197,39 +51,49 @@
       </div>
 
       <!-- QUICK ACTIONS -->
+
       <div class="grid">
-        <div class="card">
-          <div class="card-icon"><i class="ri-book-open-line"></i></div>
-          <div class="card-title">
-            <a
-              href="{% url 'quizzes:categories' %}"
-              style="text-decoration: none; color: inherit"
-            >
-              Start New Quiz
-            </a>
+        <a href="{% url 'quizzes:categories' %}" class="card-link">
+          <div class="card">
+            <div class="card-icon"><i class="ri-book-open-line"></i></div>
+            <div class="card-title">Start New Quiz</div>
+            <div class="card-desc">Choose category & difficulty.</div>
           </div>
-          <div class="card-desc">Choose category & difficulty.</div>
-        </div>
+        </a>
 
-        <div class="card">
-          <div class="card-icon"><i class="ri-bar-chart-2-line"></i></div>
-          <div class="card-title">Performance Analytics</div>
-          <div class="card-desc">View score trends & insights.</div>
-        </div>
-
-        <div class="card">
-          <div class="card-icon"><i class="ri-history-line"></i></div>
-          <div class="card-title">Recent Attempts</div>
-          <div class="card-desc">
-            {{ recent_quizzes|length }} recent quizzes
+        <a href="{% url 'quizzes:performance_dashboard' %}" class="card-link">
+          <div class="card">
+            <div class="card-icon">
+              <i class="ri-bar-chart-2-line"></i>
+            </div>
+            <div class="card-title">Performance Analytics</div>
+            <div class="card-desc">View score trends & insights.</div>
           </div>
-        </div>
+        </a>
 
-        <div class="card">
-          <div class="card-icon"><i class="ri-settings-3-line"></i></div>
-          <div class="card-title">Preferences</div>
-          <div class="card-desc">Customize your quiz experience.</div>
-        </div>
+        <!-- Recent Quizzes Card -->
+        <a href="{% url 'quizzes:recent_quizzes' %}" class="card-link">
+          <div class="card">
+            <div class="card-icon">
+              <i class="ri-history-line"></i>
+            </div>
+            <div class="card-title">Recent Quizzes</div>
+            <div class="card-desc">
+              {{ recent_quizzes|length }} recent quizzes
+            </div>
+          </div>
+        </a>
+
+        <!-- Attempts Summary Card -->
+        <a href="{% url 'quizzes:attempts_summary' %}" class="card-link">
+          <div class="card">
+            <div class="card-icon">
+              <i class="ri-settings-3-line"></i>
+            </div>
+            <div class="card-title">Attempts</div>
+            <div class="card-desc">Track your practice consistency</div>
+          </div>
+        </a>
       </div>
 
       <!-- STATS -->
