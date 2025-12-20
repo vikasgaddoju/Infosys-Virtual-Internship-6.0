@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Recent Quizzes</title>
+</head>
+<body>
+
+<h2>🕘 Recent Quizzes</h2>
+
+{% if recent_quizzes %}
+  <ul>
+    {% for quiz in recent_quizzes %}
+      <li>
+        <strong>{{ quiz.subcategory.name }}</strong>
+        ({{ quiz.difficulty|title }}) —
+        {{ quiz.score }}%
+        <br>
+        <small>Completed on {{ quiz.completed_at|date:"d M Y, H:i" }}</small>
+      </li>
+      <hr>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p>No quizzes completed yet.</p>
+{% endif %}
+
+</body>
+</html>
