@@ -1,0 +1,183 @@
+/* dashboard + cards */
+/* ---------- CARD LINK ---------- */
+body {
+        margin: 0;
+        font-family: "Poppins", sans-serif;
+        background: #f5f7fb;
+        color: #1a1a1a;
+      }
+
+      .navbar {
+        background: white;
+        padding: 18px 40px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+
+      .brand {
+        font-size: 24px;
+        font-weight: 700;
+        color: #4f46e5;
+      }
+
+      .nav-links a {
+        text-decoration: none;
+        margin-left: 20px;
+        font-weight: 500;
+        color: #333;
+      }
+
+      .dashboard-container {
+        padding: 40px;
+      }
+
+      .welcome-card {
+        background: linear-gradient(135deg, #4f46e5, #6d28d9);
+        border-radius: 18px;
+        padding: 35px;
+        color: white;
+        box-shadow: 0 10px 30px rgba(79, 70, 229, 0.25);
+      }
+
+      .welcome-header {
+        display: flex;
+        align-items: center;
+        gap: 25px;
+      }
+
+      .welcome-title {
+        font-size: 30px;
+        font-weight: 600;
+        margin-top: 0;
+      }
+
+      .welcome-sub {
+        opacity: 0.9;
+        font-size: 16px;
+        margin-top: 8px;
+      }
+
+      .user-avatar {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid rgba(255, 255, 255, 0.5);
+      }
+
+      .user-avatar-placeholder {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        background-color: rgba(255, 255, 255, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 30px;
+        font-weight: 700;
+        color: white;
+      }
+
+      .grid {
+        margin-top: 35px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 25px;
+      }
+
+      .card {
+        background: white;
+        padding: 22px;
+        border-radius: 16px;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+        transition: 0.25s ease;
+      }
+
+      .card:hover {
+        transform: translateY(-6px);
+      }
+
+      .card-icon {
+        font-size: 34px;
+        color: #4f46e5;
+      }
+
+      .card-title {
+        margin-top: 12px;
+        font-size: 20px;
+        font-weight: 600;
+      }
+
+      .card-desc {
+        margin-top: 6px;
+        color: #555;
+        font-size: 14px;
+      }
+
+      .stats {
+        margin-top: 40px;
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+      }
+
+      .stat-card {
+        flex: 1;
+        min-width: 200px;
+        background: white;
+        padding: 22px;
+        border-radius: 16px;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+      }
+
+      .stat-number {
+        font-size: 32px;
+        font-weight: 700;
+        color: #4f46e5;
+      }
+
+      .stat-label {
+        margin-top: 6px;
+        color: #666;
+      }
+.card-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+/* ---------- CARD ---------- */
+.card {
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+}
+
+.card-icon {
+  font-size: 26px;
+  margin-bottom: 10px;
+  color: #4f46e5;
+}
+
+.card-title {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.card-desc {
+  font-size: 14px;
+  color: #666;
+}
