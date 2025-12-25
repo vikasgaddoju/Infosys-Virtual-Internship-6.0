@@ -294,103 +294,166 @@ def generate_questions(request, attempt_id):
         from .ai_service import generate_quiz_questions
         from .models import Question, Concept
         import random
+        from datetime import timedelta
 
         REQUIRED_QUESTIONS = quiz_attempt.total_questions  # usually 10
-        MAX_RETRIES = 5
-        retry_count = 0
-
+        MAX_RETRIES = 3
+        
         formatted_questions = []
         question_id = 1
-
-        # 🔁 RETRY LOOP
-        while len(formatted_questions) < REQUIRED_QUESTIONS and retry_count < MAX_RETRIES:
-            retry_count += 1
-
-            # 🔹 ADD: FETCH CONCEPTS (THIS IS THE KEY ADDITION)
-            concepts_qs = Concept.objects.filter(
-                subcategory=quiz_attempt.subcategory,
-                difficulty=quiz_attempt.difficulty
-            )
-
-            concept_names = list(concepts_qs.values_list('name', flat=True))
-
-            # Safety check
-            if len(concept_names) < REQUIRED_QUESTIONS:
-                return JsonResponse({
-                    "success": False,
-                    "error": "Not enough concepts configured for this quiz."
-                }, status=500)
-
-            # Pick unique concepts
-            selected_concepts = random.sample(
-                concept_names,
-                REQUIRED_QUESTIONS
-            )
-
-            # 🔹 AI CALL WITH CONCEPTS
-            questions_data = generate_quiz_questions(
-                topic=quiz_attempt.subcategory.name,
-                category=quiz_attempt.category.name,
-                difficulty=quiz_attempt.difficulty,
-                count=REQUIRED_QUESTIONS,
-                concepts=selected_concepts
-            )
-
-            for q in questions_data:
-                if len(formatted_questions) >= REQUIRED_QUESTIONS:
-                    break
-
-                q_hash = Question.make_hash(q["question"])
-
-                # Skip duplicates
-                if Question.objects.filter(normalized_hash=q_hash).exists():
-                    continue
-
-                question_obj = Question.objects.create(
-                    category=quiz_attempt.category,
+        
+        # ============================================
+        # STEP 1: Get questions user has seen recently (last 7 days)
+        # ============================================
+        recent_attempts = QuizAttempt.objects.filter(
+            user=request.user,
+            subcategory=quiz_attempt.subcategory,
+            status=QuizAttempt.STATUS_COMPLETED,
+            completed_at__gte=timezone.now() - timedelta(days=7)
+        )
+        
+        # Collect question hashes the user has seen
+        seen_question_texts = set()
+        for attempt in recent_attempts:
+            if attempt.questions:
+                for q in attempt.questions:
+                    seen_question_texts.add(q.get('question', ''))
+        
+        # ============================================
+        # STEP 2: Try to use existing questions from DB that user hasn't seen
+        # ============================================
+        existing_questions = Question.objects.filter(
+            subcategory=quiz_attempt.subcategory,
+            difficulty=quiz_attempt.difficulty
+        ).order_by('?')  # Random order
+        
+        # Filter out questions user has seen recently
+        unseen_questions = [
+            q for q in existing_questions 
+            if q.question_text not in seen_question_texts
+        ]
+        
+        # Use up to REQUIRED_QUESTIONS from existing pool
+        for q in unseen_questions[:REQUIRED_QUESTIONS]:
+            formatted_questions.append({
+                "id": question_id,
+                "question": q.question_text,
+                "option_a": q.option_a,
+                "option_b": q.option_b,
+                "option_c": q.option_c,
+                "option_d": q.option_d,
+                "correct_answer": q.correct_answer,
+                "explanation": q.explanation,
+                "user_answer": None,
+                "is_correct": None
+            })
+            # Update usage count
+            q.usage_count += 1
+            q.save(update_fields=['usage_count'])
+            question_id += 1
+        
+        # ============================================
+        # STEP 3: Generate NEW questions if we don't have enough
+        # ============================================
+        if len(formatted_questions) < REQUIRED_QUESTIONS:
+            questions_needed = REQUIRED_QUESTIONS - len(formatted_questions)
+            retry_count = 0
+            
+            while len(formatted_questions) < REQUIRED_QUESTIONS and retry_count < MAX_RETRIES:
+                retry_count += 1
+                
+                # Fetch concepts
+                concepts_qs = Concept.objects.filter(
                     subcategory=quiz_attempt.subcategory,
-                    difficulty=quiz_attempt.difficulty,
-                    question_text=q["question"],
-                    option_a=q["option_a"],
-                    option_b=q["option_b"],
-                    option_c=q["option_c"],
-                    option_d=q["option_d"],
-                    correct_answer=q["correct_answer"],
-                    explanation=q.get("explanation", ""),
-                    normalized_hash=q_hash,
+                    difficulty=quiz_attempt.difficulty
                 )
-
-                formatted_questions.append({
-                    "id": question_id,
-                    "question": question_obj.question_text,
-                    "option_a": question_obj.option_a,
-                    "option_b": question_obj.option_b,
-                    "option_c": question_obj.option_c,
-                    "option_d": question_obj.option_d,
-                    "correct_answer": question_obj.correct_answer,
-                    "explanation": question_obj.explanation,
-                    "user_answer": None,
-                    "is_correct": None
-                })
-
-                question_id += 1
-
-        # ❌ Could not generate enough unique questions
+                concept_names = list(concepts_qs.values_list('name', flat=True))
+                
+                if len(concept_names) < questions_needed:
+                    break  # Not enough concepts, use what we have
+                
+                # Pick random concepts for new questions
+                selected_concepts = random.sample(concept_names, min(questions_needed, len(concept_names)))
+                
+                # Generate with AI
+                questions_data = generate_quiz_questions(
+                    topic=quiz_attempt.subcategory.name,
+                    category=quiz_attempt.category.name,
+                    difficulty=quiz_attempt.difficulty,
+                    count=questions_needed,
+                    concepts=selected_concepts
+                )
+                
+                for q in questions_data:
+                    if len(formatted_questions) >= REQUIRED_QUESTIONS:
+                        break
+                    
+                    q_hash = Question.make_hash(q["question"])
+                    
+                    # Skip if this exact question exists OR user has seen it
+                    if Question.objects.filter(normalized_hash=q_hash).exists():
+                        continue
+                    if q["question"] in seen_question_texts:
+                        continue
+                    
+                    # Create new question in DB
+                    question_obj = Question.objects.create(
+                        category=quiz_attempt.category,
+                        subcategory=quiz_attempt.subcategory,
+                        difficulty=quiz_attempt.difficulty,
+                        question_text=q["question"],
+                        option_a=q["option_a"],
+                        option_b=q["option_b"],
+                        option_c=q["option_c"],
+                        option_d=q["option_d"],
+                        correct_answer=q["correct_answer"],
+                        explanation=q.get("explanation", ""),
+                        normalized_hash=q_hash,
+                        usage_count=1
+                    )
+                    
+                    formatted_questions.append({
+                        "id": question_id,
+                        "question": question_obj.question_text,
+                        "option_a": question_obj.option_a,
+                        "option_b": question_obj.option_b,
+                        "option_c": question_obj.option_c,
+                        "option_d": question_obj.option_d,
+                        "correct_answer": question_obj.correct_answer,
+                        "explanation": question_obj.explanation,
+                        "user_answer": None,
+                        "is_correct": None
+                    })
+                    question_id += 1
+        
+        # ============================================
+        # STEP 4: Check if we have enough questions
+        # ============================================
         if len(formatted_questions) < REQUIRED_QUESTIONS:
             quiz_attempt.status = QuizAttempt.STATUS_ABANDONED
             quiz_attempt.save()
             return JsonResponse({
                 'success': False,
-                'error': 'Could not generate enough unique questions. Please try again.'
+                'error': f'Could not generate enough unique questions. Got {len(formatted_questions)}/{REQUIRED_QUESTIONS}. Try again later.'
             }, status=500)
-
-        # ✅ Save questions to quiz attempt
+        
+        # Shuffle to mix existing and new questions
+        random.shuffle(formatted_questions)
+        
+        # Re-number after shuffle
+        for i, q in enumerate(formatted_questions):
+            q['id'] = i + 1
+        
+        # ============================================
+        # STEP 5: Save and return
+        # ============================================
         quiz_attempt.questions = formatted_questions
         quiz_attempt.status = QuizAttempt.STATUS_IN_PROGRESS
         quiz_attempt.ai_meta = {
             'model': 'gpt-3.5-turbo',
             'generated_at': timezone.now().isoformat(),
-            'retries': retry_count
+            'existing_used': sum(1 for q in formatted_questions if q.get('id')),
+            'newly_generated': REQUIRED_QUESTIONS - sum(1 for q in formatted_questions if q.get('id'))
         }
         quiz_attempt.save()
 
@@ -407,6 +470,7 @@ def generate_questions(request, attempt_id):
             'success': False,
             'error': str(e)
         }, status=500)
+
 
 @login_required
 def show_question(request, attempt_id):

@@ -253,10 +253,19 @@
                 updateSelectionPath();
 
                 if (isLeaf) {
-                    state.leafSubcategoryId = id;
+                    // Set the leaf subcategory ID as integer
+                    state.leafSubcategoryId = parseInt(id, 10);
                     sidebarPlaceholder.style.display = 'none';
                     sidebarContent.style.display = 'block';
                 } else {
+                    // Not a leaf - hide sidebar and reset leaf ID
+                    state.leafSubcategoryId = null;
+                    state.difficulty = null;
+                    sidebarPlaceholder.style.display = 'block';
+                    sidebarContent.style.display = 'none';
+                    startContainer.style.display = 'none';
+                    document.querySelectorAll('.difficulty-btn').forEach(b => b.classList.remove('selected'));
+
                     const data = await fetchChildren(type, id);
                     if (data.children && data.children.length >= 0) {
                         renderLevel(level + 1, data.children, name);
