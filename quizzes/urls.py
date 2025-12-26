@@ -44,4 +44,6 @@ urlpatterns = [
      # back to previous question 
      path("attempt/<uuid:attempt_id>/previous/",views.previous_question,name="previous_question"),
 
+     path('attempt/<uuid:attempt_id>/save-timer/', views.save_timer, name='save_timer'),
+
 ]

@@ -496,23 +496,26 @@ def show_question(request, attempt_id):
     answered_count = sum(1 for q in quiz_attempt.questions if q.get('user_answer') is not None)
     
     # Calculate remaining time correctly
-    TIME_LIMIT_SECONDS = 600  # 10 minutes total
-    
-    # Time already spent in previous sessions
-    time_already_spent = quiz_attempt.time_spent_seconds
-    
-    # Time spent in current session
-    if quiz_attempt.started_at:
-        time_spent_current_session = int((timezone.now() - quiz_attempt.started_at).total_seconds())
+    TIME_LIMIT_SECONDS = quiz_attempt.time_limit_seconds  # Use per-attempt limit (default 600)
+
+    # PRIORITY 1: Use frontend-saved remaining time (most accurate, saved on tab close)
+    if quiz_attempt.remaining_seconds is not None and quiz_attempt.remaining_seconds > 0:
+        remaining_seconds = quiz_attempt.remaining_seconds
     else:
-        time_spent_current_session = 0
-    
-    # Total time consumed
-    total_time_spent = time_already_spent + time_spent_current_session
-    
-    # Remaining time
-    remaining_seconds = max(0, TIME_LIMIT_SECONDS - total_time_spent)
-    
+        # PRIORITY 2: Fallback to server-side calculation
+        time_already_spent = quiz_attempt.time_spent_seconds or 0
+        
+        if quiz_attempt.started_at:
+            time_spent_current_session = int((timezone.now() - quiz_attempt.started_at).total_seconds())
+        else:
+            time_spent_current_session = 0
+            
+        total_time_spent = time_already_spent + time_spent_current_session
+        remaining_seconds = max(0, TIME_LIMIT_SECONDS - total_time_spent)
+
+    # Safety: Never go negative
+    remaining_seconds = max(0, remaining_seconds)
+
     return render(request, "quizzes/quiz_question.html", {
         "quiz_attempt": quiz_attempt,
         "question": current_question_with_answer,
@@ -520,8 +523,8 @@ def show_question(request, attempt_id):
         "total_questions": quiz_attempt.total_questions,
         "answered_count": answered_count,
         "has_prev": quiz_attempt.current_question_index > 0,
-        "remaining_seconds": remaining_seconds,
-        "time_already_spent": time_already_spent,
+        "remaining_seconds": remaining_seconds,           # This is now 100% accurate
+        "time_already_spent": quiz_attempt.time_spent_seconds or 0,
     })
 
 
@@ -660,10 +663,8 @@ def finalize_quiz_attempt(quiz_attempt):
 
     # Calculate final time spent
     if quiz_attempt.started_at:
-        time_spent_current_session = int(
-            (quiz_attempt.completed_at - quiz_attempt.started_at).total_seconds()
-        )
-        quiz_attempt.time_taken_seconds = quiz_attempt.time_spent_seconds + time_spent_current_session
+       
+        quiz_attempt.time_taken_seconds = quiz_attempt.time_spent_seconds 
     else:
         quiz_attempt.time_taken_seconds = quiz_attempt.time_spent_seconds
 
@@ -1094,3 +1095,25 @@ def leaderboard(request):
     return render(request, 'quizzes/leaderboard.html', {
         'leaderboard': leaderboard_data
     })
+
+@login_required
+@require_POST
+def save_timer(request, attempt_id):
+    try:
+        attempt = get_object_or_404(QuizAttempt, id=attempt_id, user=request.user)
+        
+        if attempt.status != QuizAttempt.STATUS_IN_PROGRESS:
+            return JsonResponse({'status': 'ignored'})
+
+        remaining = request.POST.get('remaining_seconds')
+        if remaining is not None:
+            attempt.remaining_seconds = int(remaining)
+            
+            # Also update time_spent_seconds to keep both in sync
+            attempt.time_spent_seconds = attempt.time_limit_seconds - int(remaining)
+            
+            attempt.save(update_fields=['remaining_seconds', 'time_spent_seconds'])
+        
+        return JsonResponse({'status': 'saved'})
+    except:
+        return JsonResponse({'status': 'error'}, status=400)

@@ -61,6 +61,9 @@ class QuizAttempt(models.Model):
     time_limit_seconds = models.IntegerField(default=600)  # 10 minutes default
     paused_at = models.DateTimeField(null=True, blank=True)
     time_spent_seconds = models.IntegerField(default=0)
+    remaining_seconds = models.PositiveIntegerField(null=True, blank=True)  # NEW
+
+
     # JSON structure for questions:
     # [
     #   {
@@ -185,3 +188,6 @@ class Concept(models.Model):
 
     def __str__(self):
         return f"{self.subcategory.name} - {self.name} ({self.difficulty})"
+        
+# Inside QuizAttempt model, add this line
+remaining_seconds = models.PositiveIntegerField(null=True, blank=True)

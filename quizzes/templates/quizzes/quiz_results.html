@@ -42,126 +42,136 @@
 
 {% block extra_scripts %}
 <script>
-  // Check if quiz was auto-submitted due to timer expiration
-  (function(){
-    const urlParams = new URLSearchParams(window.location.search);
-    const autoSubmitted = urlParams.get('auto_submitted') === 'true';
+// Keep your original "Time's Up!" popup (unchanged)
+(function(){
+  const urlParams = new URLSearchParams(window.location.search);
+  const autoSubmitted = urlParams.get('auto_submitted') === 'true';
+  
+  if(autoSubmitted){
+    showAutoSubmitPopup();
+  }
+  
+  function showAutoSubmitPopup(){
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      animation: fadeIn 0.3s ease-in-out;
+    `;
     
-    if(autoSubmitted){
-      showAutoSubmitPopup();
-    }
+    const popup = document.createElement('div');
+    popup.style.cssText = `
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 32px;
+      max-width: 420px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(10px);
+      animation: slideUp 0.4s cubic-bezier(0.2, 0.9, 0.2, 1);
+    `;
     
-    function showAutoSubmitPopup(){
-      const overlay = document.createElement('div');
-      overlay.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.7);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 9999;
-        animation: fadeIn 0.3s ease-in-out;
-      `;
-      
-      const popup = document.createElement('div');
-      popup.style.cssText = `
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 16px;
-        padding: 32px;
-        max-width: 420px;
-        width: 90%;
-        text-align: center;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-        backdrop-filter: blur(10px);
-        animation: slideUp 0.4s cubic-bezier(0.2, 0.9, 0.2, 1);
-      `;
-      
-      const icon = document.createElement('div');
-      icon.innerHTML = '⏱️';
-      icon.style.cssText = `
-        font-size: 48px;
-        margin-bottom: 16px;
-      `;
-      
-      const title = document.createElement('h2');
-      title.textContent = 'Time\'s Up!';
-      title.style.cssText = `
-        color: #f6fbff;
-        margin: 0 0 8px 0;
-        font-size: 24px;
-        font-weight: 700;
-      `;
-      
-      const message = document.createElement('p');
-      message.textContent = 'Your quiz has been automatically submitted because the time limit has been reached.';
-      message.style.cssText = `
-        color: #94a3b8;
-        margin: 0 0 24px 0;
-        line-height: 1.5;
-        font-size: 14px;
-      `;
-      
-      const button = document.createElement('button');
-      button.textContent = 'View Results';
-      button.style.cssText = `
-        background: linear-gradient(90deg, #7c93ff, #6ee7b7);
-        color: #052233;
-        border: none;
-        padding: 12px 28px;
-        border-radius: 10px;
-        font-weight: 700;
-        cursor: pointer;
-        font-size: 14px;
-        box-shadow: 0 8px 24px rgba(124, 147, 255, 0.3);
-        transition: transform 160ms, box-shadow 160ms;
-      `;
-      
-      button.addEventListener('mouseover', () => {
-        button.style.transform = 'translateY(-2px)';
-        button.style.boxShadow = '0 12px 32px rgba(124, 147, 255, 0.4)';
-      });
-      
-      button.addEventListener('mouseout', () => {
-        button.style.transform = 'translateY(0)';
-        button.style.boxShadow = '0 8px 24px rgba(124, 147, 255, 0.3)';
-      });
-      
-      button.addEventListener('click', () => {
-        overlay.remove();
-      });
-      
-      popup.appendChild(icon);
-      popup.appendChild(title);
-      popup.appendChild(message);
-      popup.appendChild(button);
-      overlay.appendChild(popup);
-      document.body.appendChild(overlay);
-      
-      // Add animation styles
-      const style = document.createElement('style');
-      style.textContent = `
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
+    const icon = document.createElement('div');
+    icon.innerHTML = '⏱️';
+    icon.style.cssText = `
+      font-size: 48px;
+      margin-bottom: 16px;
+    `;
+    
+    const title = document.createElement('h2');
+    title.textContent = 'Time\'s Up!';
+    title.style.cssText = `
+      color: #f6fbff;
+      margin: 0 0 8px 0;
+      font-size: 24px;
+      font-weight: 700;
+    `;
+    
+    const message = document.createElement('p');
+    message.textContent = 'Your quiz has been automatically submitted because the time limit has been reached.';
+    message.style.cssText = `
+      color: #94a3b8;
+      margin: 0 0 24px 0;
+      line-height: 1.5;
+      font-size: 14px;
+    `;
+    
+    const button = document.createElement('button');
+    button.textContent = 'View Results';
+    button.style.cssText = `
+      background: linear-gradient(90deg, #7c93ff, #6ee7b7);
+      color: #052233;
+      border: none;
+      padding: 12px 28px;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 14px;
+      box-shadow: 0 8px 24px rgba(124, 147, 255, 0.3);
+      transition: transform 160ms, box-shadow 160ms;
+    `;
+    
+    button.addEventListener('mouseover', () => {
+      button.style.transform = 'translateY(-2px)';
+      button.style.boxShadow = '0 12px 32px rgba(124, 147, 255, 0.4)';
+    });
+    
+    button.addEventListener('mouseout', () => {
+      button.style.transform = 'translateY(0)';
+      button.style.boxShadow = '0 8px 24px rgba(124, 147, 255, 0.3)';
+    });
+    
+    button.addEventListener('click', () => {
+      overlay.remove();
+    });
+    
+    popup.appendChild(icon);
+    popup.appendChild(title);
+    popup.appendChild(message);
+    popup.appendChild(button);
+    overlay.appendChild(popup);
+    document.body.appendChild(overlay);
+    
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
         }
-        @keyframes slideUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+        to {
+          opacity: 1;
+          transform: translateY(0);
         }
-      `;
-      document.head.appendChild(style);
+      }
+    `;
+    document.head.appendChild(style);
+  }
+})();
+
+// NEW: Force sidebar timer to 00:00 on results page
+document.addEventListener('DOMContentLoaded', function() {
+  // Find all elements that contain exactly MM:SS format
+  document.querySelectorAll('div, span, p').forEach(el => {
+    const text = el.textContent.trim();
+    if (text.match(/^\d{2}:\d{2}$/)) {
+      el.textContent = "00:00";
     }
-  })();
+  });
+});
 </script>
 {% endblock %}
