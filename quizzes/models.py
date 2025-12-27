@@ -59,7 +59,11 @@ class QuizAttempt(models.Model):
     ],
     default='medium')
     time_limit_seconds = models.IntegerField(default=600)  # 10 minutes default
-    
+    paused_at = models.DateTimeField(null=True, blank=True)
+    time_spent_seconds = models.IntegerField(default=0)
+    remaining_seconds = models.PositiveIntegerField(null=True, blank=True)  # NEW
+
+
     # JSON structure for questions:
     # [
     #   {
@@ -85,7 +89,7 @@ class QuizAttempt(models.Model):
     current_question_index = models.SmallIntegerField(default=0)  # Track progress
     score = models.FloatField(default=0.0)
     
-    started_at = models.DateTimeField(auto_now_add=True)
+    started_at = models.DateTimeField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

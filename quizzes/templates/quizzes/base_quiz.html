@@ -11,15 +11,15 @@
     <!-- Colors & design tokens -->
     <style>
       :root {
-        --bg: #0f1724; /* deep navy */
+        --bg: #0f1724;
         --card: linear-gradient(
           180deg,
           rgba(255, 255, 255, 0.03),
           rgba(255, 255, 255, 0.01)
         );
-        --muted: #94a3b8; /* slate-400 */
-        --accent: #6ee7b7; /* mint/green accent */
-        --accent-2: #7c93ff; /* mild indigo */
+        --muted: #94a3b8;
+        --accent: #6ee7b7;
+        --accent-2: #7c93ff;
         --danger: #ff7a7a;
         --glass: rgba(255, 255, 255, 0.02);
         --glass-2: rgba(255, 255, 255, 0.03);
@@ -30,9 +30,7 @@
         --max-width: 980px;
       }
 
-      /* Reset-ish */
-      html,
-      body {
+      html, body {
         height: 100%;
       }
       body {
@@ -68,7 +66,6 @@
         padding-top: 32px;
       }
 
-      /* Left: Question card */
       .card {
         background: var(--card);
         border-radius: var(--radius);
@@ -127,7 +124,6 @@
         font-size: 13px;
       }
 
-      /* Progress area */
       .progress-wrap {
         margin-top: 12px;
         display: flex;
@@ -161,7 +157,6 @@
         text-align: right;
       }
 
-      /* question */
       .question {
         margin-top: 22px;
       }
@@ -171,7 +166,6 @@
         margin: 0 0 18px 0;
       }
 
-      /* options */
       .options {
         display: grid;
         grid-template-columns: 1fr;
@@ -212,7 +206,6 @@
         color: #07203a;
         background: linear-gradient(180deg, var(--accent), var(--accent-2));
         box-shadow: 0 6px 18px rgba(124, 147, 255, 0.06);
-        transform: translateY(0);
       }
       .option .text {
         color: #e9f6ff;
@@ -220,7 +213,6 @@
         line-height: 1.25;
       }
 
-      /* selected state */
       .option.selected {
         outline: 2px solid rgba(124, 147, 255, 0.18);
         box-shadow: 0 16px 40px rgba(7, 14, 40, 0.6);
@@ -232,7 +224,6 @@
         transform: translateY(-6px);
       }
 
-      /* submit */
       .actions {
         margin-top: 18px;
         display: flex;
@@ -261,7 +252,6 @@
         box-shadow: none;
       }
 
-      /* Right: summary panel */
       .panel {
         align-self: start;
         background: linear-gradient(
@@ -291,16 +281,13 @@
         color: var(--accent);
         font-size: 18px;
       }
-
       .timer.warning {
         color: #fbbf24;
       }
-
       .timer.danger {
         color: var(--danger);
       }
 
-      /* small helpers */
       .muted {
         color: var(--muted);
         font-size: 13px;
@@ -309,7 +296,6 @@
         text-align: center;
       }
 
-      /* responsive */
       @media (max-width: 980px) {
         .container {
           grid-template-columns: 1fr;
@@ -321,7 +307,6 @@
         }
       }
 
-      /* reduced motion */
       @media (prefers-reduced-motion: reduce) {
         * {
           transition: none !important;
@@ -333,23 +318,21 @@
     {% block extra_styles %}{% endblock %}
   </head>
   <body
-  data-question="{{ question_number|default:1 }}"
-  data-total="{{ total_questions|default:quiz_attempt.total_questions }}"
-  data-remaining="{{ remaining_seconds|default:600 }}"
-  data-quit-url="{% url 'quizzes:dashboard' %}"
->
+    data-question-number="{{ question_number|default:1 }}"
+    data-total-questions="{{ total_questions|default:quiz_attempt.total_questions|default:10 }}"
+    data-remaining="{{ remaining_seconds|default:600 }}"
+    data-quit-url="{% url 'quizzes:dashboard' %}"
+  >
 
     <div class="container">
-      <!-- LEFT: Quiz card -->
       <main class="card" role="main" aria-labelledby="quiz-title">
         <header class="quiz-header">
           <div class="quiz-title" aria-hidden="false">
             <div class="badge">Quiz</div>
             <div>
               <h1 id="quiz-title" class="title">
-                {% if quiz_attempt %} {{ quiz_attempt.subcategory.name }} {%else%} – {% endif %}
+                {% if quiz_attempt %} {{ quiz_attempt.subcategory.name }} {% else %} – {% endif %}
               </h1>
-
               <p class="sub">
                 Difficulty:
                 <strong>
@@ -358,83 +341,27 @@
                 </strong>
                 · Question
                 <span id="meta-qno">{{ question_number|default:1 }}</span> of
-                <span id="meta-total"
-                  >{{total_questions|default:quiz_attempt.total_questions}}</span
-                >
+                <span id="meta-total">{{ total_questions|default:quiz_attempt.total_questions }}</span>
               </p>
             </div>
           </div>
 
           <div class="center" style="min-width: 150px">
-            <!-- small hint -->
             <div class="muted" style="font-size: 13px">
               Tip: Use A/B/C/D keys to choose
             </div>
           </div>
         </header>
 
-        <!-- progress -->
-        <div
-          class="progress-wrap"
-          aria-hidden="false"
-          data-qno="{{ question_number|default:1 }}"
-          data-total="{{ total_questions|default:quiz_attempt.total_questions }}"
-        >
-          <div
-            class="progress"
-            role="progressbar"
-            aria-valuemin="0"
-            aria-valuemax="{{ total_questions|default:quiz_attempt.total_questions }}"
-            aria-valuenow="{{ question_number|default:1 }}"
-          >
+        <div class="progress-wrap">
+          <div class="progress" role="progressbar">
             <span id="progress-fill" style="width: 0%"></span>
           </div>
           <div class="progress-meta"><span id="meta-percent">0</span>%</div>
         </div>
 
-        <!-- main content from child templates -->
         <div class="question" id="question-area">
-          {% block quiz_content %}
-          <!-- Example fallback content for dev -->
-          <p class="q-text">Question text will be inserted here.</p>
-          <div class="options">
-            <label class="option" data-value="A">
-              <div class="letter">A</div>
-              <div class="text">Option A text</div>
-              <input type="radio" name="answer" value="A" />
-            </label>
-            <label class="option" data-value="B">
-              <div class="letter">B</div>
-              <div class="text">Option B text</div>
-              <input type="radio" name="answer" value="B" />
-            </label>
-            <label class="option" data-value="C">
-              <div class="letter">C</div>
-              <div class="text">Option C text</div>
-              <input type="radio" name="answer" value="C" />
-            </label>
-            <label class="option" data-value="D">
-              <div class="letter">D</div>
-              <div class="text">Option D text</div>
-              <input type="radio" name="answer" value="D" />
-            </label>
-          </div>
-
-          <div class="actions">
-            <button class="btn" id="submit-btn">Submit</button>
-            <button class="btn secondary" id="skip-btn" title="Skip question">
-              Skip
-            </button>
-            <div style="flex: 1"></div>
-            <div class="muted">
-              Answered: <span id="answered-count">0</span> /
-              <span id="total-count"
-                >{{ total_questions|default:quiz_attempt.total_questions
-                }}</span
-              >
-            </div>
-          </div>
-          {% endblock %}
+          {% block quiz_content %}{% endblock %}
         </div>
       </main>
 
@@ -447,24 +374,15 @@
         </div>
         <div class="stat">
           <div class="muted">Category</div>
-          <div>
-            {% if quiz_attempt %} {{ quiz_attempt.category.name }} {% else %} –
-            {% endif %}
-          </div>
+          <div>{% if quiz_attempt %} {{ quiz_attempt.category.name }} {% else %} – {% endif %}</div>
         </div>
         <div class="stat">
           <div class="muted">Subcategory</div>
-          <div>
-            {% if quiz_attempt %} {{ quiz_attempt.subcategory.name }} {% else %}
-            – {% endif %}
-          </div>
+          <div>{% if quiz_attempt %} {{ quiz_attempt.subcategory.name }} {% else %} – {% endif %}</div>
         </div>
         <div class="stat">
           <div class="muted">Difficulty</div>
-          <div>
-            {% if quiz_attempt %} {{ quiz_attempt.difficulty }} {% else %} {{
-            difficulty }} {% endif %}
-          </div>
+          <div>{% if quiz_attempt %} {{ quiz_attempt.difficulty }} {% else %} {{ difficulty }} {% endif %}</div>
         </div>
         <hr style="margin: 12px 0; border-color: rgba(255, 255, 255, 0.03)" />
 
@@ -476,20 +394,8 @@
 
         <h4 style="margin-top: 12px">Quick Controls</h4>
         <div style="display: flex; gap: 8px; margin-top: 10px">
-          <button
-            class="btn"
-            id="quit-btn"
-            style="padding: 8px 10px; font-size: 13px"
-          >
-            Quit
-          </button>
-          <button
-            class="btn secondary"
-            id="review-btn"
-            style="padding: 8px 10px; font-size: 13px"
-          >
-            Review
-          </button>
+          <button class="btn" id="quit-btn" style="padding: 8px 10px; font-size: 13px">Quit</button>
+          <button class="btn secondary" id="review-btn" style="padding: 8px 10px; font-size: 13px">Review</button>
         </div>
 
         <hr style="margin: 12px 0; border-color: rgba(255, 255, 255, 0.03)" />
@@ -497,31 +403,21 @@
         <h4>Progress</h4>
         <div class="stat">
           <div class="muted">Answered</div>
-          <div>
-            <strong id="panel-answered">0</strong>/<span id="panel-total"
-              >{{ total_questions|default:quiz_attempt.total_questions }}</span
-            >
-          </div>
+          <div><strong id="panel-answered">0</strong>/<span id="panel-total">{{ total_questions|default:quiz_attempt.total_questions }}</span></div>
         </div>
         <div style="margin-top: 12px; font-size: 12px; color: var(--muted)">
-          Keyboard shortcuts:
-          <strong>A</strong>/<strong>B</strong>/<strong>C</strong>/<strong
-            >D</strong
-          >
-          – Submit: <strong>Enter</strong>
+          Keyboard shortcuts: <strong>A</strong>/<strong>B</strong>/<strong>C</strong>/<strong>D</strong> – Submit: <strong>Enter</strong>
         </div>
       </aside>
     </div>
 
-    <!-- JS for interactions -->
+    <!-- Global JS -->
     <script>
       (function(){
-        // small helpers
-        const root = document.documentElement;
-        const get = (sel)=> document.querySelector(sel);
-        const getAll = (sel)=> Array.from(document.querySelectorAll(sel));
+        const get = (sel) => document.querySelector(sel);
+        const getAll = (sel) => Array.from(document.querySelectorAll(sel));
 
-        // Elements
+        const body = document.body;
         const options = getAll('.option');
         const submitBtn = get('#submit-btn');
         const skipBtn = get('#skip-btn');
@@ -536,16 +432,16 @@
         const totalCountEl = get('#total-count');
         const timerDisplay = get('#timer-display');
 
-        // Template values (Django will fill these)
-        let qNo = Number(metaQno ? metaQno.textContent.trim() : ({{ question_number|default:1 }}));
-        const total = Number(metaTotal ? metaTotal.textContent.trim() : ({{ total_questions|default:quiz_attempt.total_questions }}));
-        let answered = Number(answeredCountEl ? answeredCountEl.textContent.trim() : 0);
+        // Safe values from data attributes
+        let qNo = Number(body.dataset.questionNumber || 1);
+        const total = Number(body.dataset.totalQuestions || 10);
+        let answered = Number(answeredCountEl?.textContent?.trim() || 0);
+
         totalCountEl && (totalCountEl.textContent = total);
         panelAnswered && (panelAnswered.textContent = answered);
 
-        // update progress function
         function updateProgress(){
-          const pct = Math.round((qNo/total)*100);
+          const pct = total ? Math.round((qNo / total) * 100) : 0;
           if(progressFill) progressFill.style.width = pct + '%';
           if(metaPercent) metaPercent.textContent = pct;
           if(metaQno) metaQno.textContent = qNo;
@@ -554,142 +450,81 @@
         }
         updateProgress();
 
-        // selecting options
         function deselectAll(){
-          options.forEach(o => o.classList.remove('selected'));
-          options.forEach(o => { const inp = o.querySelector('input[type=radio]'); if(inp) inp.checked = false; });
+          options.forEach(o => {
+            o.classList.remove('selected');
+            const inp = o.querySelector('input[type=radio]');
+            if(inp) inp.checked = false;
+          });
         }
-        options.forEach(opt=>{
-          opt.addEventListener('click', ()=>{
+
+        options.forEach(opt => {
+          opt.addEventListener('click', () => {
             deselectAll();
             opt.classList.add('selected');
             const inp = opt.querySelector('input[type=radio]');
-            if(inp){ inp.checked = true; }
-          })
+            if(inp) inp.checked = true;
+          });
         });
 
-        // keyboard shortcuts: A/B/C/D to select; Enter to submit
-        window.addEventListener('keydown', (e)=>{
+        window.addEventListener('keydown', (e) => {
           const key = e.key.toLowerCase();
           if(['a','b','c','d'].includes(key)){
             const idx = {'a':0,'b':1,'c':2,'d':3}[key];
             const target = options[idx];
-            if(target){
-              target.click();
-              // subtle pulse
-              target.animate([{ transform: 'translateY(-4px)' }, { transform: 'translateY(0)' }], { duration: 220 });
-            }
+            if(target) target.click();
           } else if(e.key === 'Enter'){
-            // Avoid triggering form when focus in textareas etc.
             e.preventDefault();
-            submitBtn && submitBtn.click();
+            submitBtn?.click();
           }
         });
 
-        // Attach submit behavior (child template should override with real AJAX)
-        if(submitBtn){
-          submitBtn.addEventListener('click', (ev)=>{
-            ev.preventDefault();
-            // pick selected radio
-            const selected = document.querySelector('.option.selected input[type=radio]');
-            if(!selected){
-              // small shake animation to draw attention
-              const el = get('#question-area');
-              el.animate([{ transform:'translateX(-6px)' }, { transform:'translateX(6px)' }, { transform:'translateX(0px)' }], { duration: 300 });
-              return;
-            }
-            // simulate answer submission (child templates should replace this with actual AJAX)
-            // For UI demo, we increment answered & qNo
-            answered = Math.min(total, answered + 1);
-            qNo = Math.min(total, qNo + 1);
-            updateProgress();
+        // Demo buttons
+        submitBtn?.addEventListener('click', (e) => {
+          e.preventDefault();
+          const selected = document.querySelector('.option.selected input[type=radio]');
+          if(!selected){
+            get('#question-area')?.animate([
+              { transform:'translateX(-6px)' },
+              { transform:'translateX(6px)' },
+              { transform:'translateX(0)' }
+            ], { duration: 300 });
+            return;
+          }
+          answered = Math.min(total, answered + 1);
+          qNo = Math.min(total, qNo + 1);
+          updateProgress();
+          deselectAll();
+        });
 
-            // small success animation
-            selected.closest('.option').animate([{ opacity:1 }, { opacity:0.85 }, { opacity:1 }], { duration: 280 });
+        skipBtn?.addEventListener('click', (e) => {
+          e.preventDefault();
+          qNo = Math.min(total, qNo + 1);
+          updateProgress();
+          deselectAll();
+        });
 
-            // If this was last question, redirect to results (child should handle)
-            if(qNo > total){
-              // child templates provide a URL in data-result-url if desired
-              const resultUrl = document.body.dataset.resultsUrl || "/";
-              window.location.href = resultUrl;
-            } else {
-              // child templates should load next question – we simulate leaving UI ready
-              deselectAll();
-              // smooth scroll to top of card
-              get('.card').scrollIntoView({behavior:'smooth'});
-            }
-          });
-        }
+        quitBtn?.addEventListener('click', (e) => {
+          e.preventDefault();
+          if(confirm("Quit quiz? Your progress will be saved.")){
+            window.location.href = body.dataset.quitUrl || "{% url 'quizzes:dashboard' %}";
+          }
+        });
 
-        if(skipBtn){
-          skipBtn.addEventListener('click', (e)=>{
-            e.preventDefault();
-            // simulate skip
-            qNo = Math.min(total, qNo + 1);
-            updateProgress();
-            deselectAll();
-          });
-        }
+        reviewBtn?.addEventListener('click', (e) => {
+          e.preventDefault();
+          window.location.href = body.dataset.reviewUrl || "/";
+        });
 
-        if(quitBtn){
-          quitBtn.addEventListener('click', (e)=>{
-            e.preventDefault();
-            if(confirm("Quit quiz? Your progress will be saved.")){
-              // child should define quit URL
-              const quitUrl = document.body.dataset.quitUrl || "{% url 'quizzes:dashboard' %}";
-              window.location.href = quitUrl;
-            }
-          });
-        }
-
-        if(reviewBtn){
-          reviewBtn.addEventListener('click', (e)=>{
-            e.preventDefault();
-            const reviewUrl = document.body.dataset.reviewUrl || "/";
-            window.location.href = reviewUrl;
-          });
-        }
-
-        // Timer (with proper remaining time calculation)
-        (function initTimer(){
-          let remaining = parseInt(document.body.dataset.remaining || 600);
+        // GLOBAL TIMER RESET: Show 00:00 when not in active quiz
+        document.addEventListener('DOMContentLoaded', function() {
+          const isActiveQuiz = document.getElementById('submit-answer') || document.getElementById('options-wrap');
           
-          function fmt(s){
-            const m = Math.floor(s/60).toString().padStart(2,'0');
-            const sec = (s%60).toString().padStart(2,'0');
-            return `${m}:${sec}`;
+          if (!isActiveQuiz && timerDisplay) {
+            timerDisplay.textContent = "00:00";
+            timerDisplay.className = "timer"; // reset colors
           }
-
-          function updateTimerDisplay(){
-            if(timerDisplay){
-              timerDisplay.textContent = fmt(remaining);
-              
-              // Change color based on time remaining
-              if(remaining <= 60 && remaining > 30){
-                timerDisplay.classList.remove('danger');
-                timerDisplay.classList.add('warning');
-              } else if(remaining <= 30){
-                timerDisplay.classList.remove('warning');
-                timerDisplay.classList.add('danger');
-              }
-            }
-          }
-
-          updateTimerDisplay();
-
-          // countdown every second
-          const interval = setInterval(()=>{
-            remaining -= 1;
-            updateTimerDisplay();
-
-            // When timer reaches 0
-            if(remaining < 0){
-              clearInterval(interval);
-              // Auto-submit quiz
-              autoSubmitQuiz();
-            }
-          }, 1000);
-        })();
+        });
 
         // Auto-submit function
         async function autoSubmitQuiz(){

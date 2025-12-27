@@ -28,6 +28,7 @@ urlpatterns = [
     path("attempt/<uuid:attempt_id>/generate/", views.generate_questions, name="generate_questions"),
     path("attempt/<uuid:attempt_id>/question/", views.show_question, name="show_question"),
     path("attempt/<uuid:attempt_id>/submit/", views.submit_answer, name="submit_answer"),
+    path("attempt/<uuid:attempt_id>/auto-submit/", views.auto_submit_quiz, name="auto_submit_quiz"),
     path("attempt/<uuid:attempt_id>/results/", views.quiz_results, name="quiz_results"),
 
     # ============================================================
@@ -49,4 +50,14 @@ urlpatterns = [
     path('quiz/resume/<uuid:attempt_id>/', views.resume_quiz_prompt, name='resume_quiz_prompt'),
     path('quiz/resume/<uuid:attempt_id>/continue/', views.resume_quiz, name='resume_quiz'),
     path('quiz/resume/<uuid:attempt_id>/quit/', views.quit_quiz, name='quit_quiz'),
+     # resume quiz
+     path('quiz/resume/<uuid:attempt_id>/',views.resume_quiz_prompt,name='resume_quiz_prompt'),
+     path('quiz/resume/<uuid:attempt_id>/continue/', views.resume_quiz, name='resume_quiz'),
+     path('quiz/resume/<uuid:attempt_id>/quit/', views.quit_quiz, name='quit_quiz'),
+
+     # back to previous question 
+     path("attempt/<uuid:attempt_id>/previous/",views.previous_question,name="previous_question"),
+
+     path('attempt/<uuid:attempt_id>/save-timer/', views.save_timer, name='save_timer'),
+
 ]

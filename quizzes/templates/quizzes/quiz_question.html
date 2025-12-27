@@ -1,47 +1,55 @@
 {% extends "quizzes/base_quiz.html" %}
-{% block title %}Question {{ question_number }} / {{ total_questions }} — {{ quiz_attempt.subcategory.name }}{% endblock %}
+{% block title %}Question {{ question_number }} / {{ total_questions }} – {{ quiz_attempt.subcategory.name }}{% endblock %}
 
 {% block quiz_content %}
   <p class="q-text">{{ question.question }}</p>
 
   <div class="options" id="options-wrap">
-    <label class="option" data-value="A">
+    <label class="option{% if question.user_answer == 'A' %} selected{% endif %}" data-value="A">
       <div class="letter">A</div>
       <div class="text">{{ question.option_a }}</div>
-      <input type="radio" name="answer" value="A">
+      <input type="radio" name="answer" value="A" {% if question.user_answer == 'A' %}checked{% endif %}>
     </label>
 
-    <label class="option" data-value="B">
+    <label class="option{% if question.user_answer == 'B' %} selected{% endif %}" data-value="B">
       <div class="letter">B</div>
       <div class="text">{{ question.option_b }}</div>
-      <input type="radio" name="answer" value="B">
+      <input type="radio" name="answer" value="B" {% if question.user_answer == 'B' %}checked{% endif %}>
     </label>
 
-    <label class="option" data-value="C">
+    <label class="option{% if question.user_answer == 'C' %} selected{% endif %}" data-value="C">
       <div class="letter">C</div>
       <div class="text">{{ question.option_c }}</div>
-      <input type="radio" name="answer" value="C">
+      <input type="radio" name="answer" value="C" {% if question.user_answer == 'C' %}checked{% endif %}>
     </label>
 
-    <label class="option" data-value="D">
+    <label class="option{% if question.user_answer == 'D' %} selected{% endif %}" data-value="D">
       <div class="letter">D</div>
       <div class="text">{{ question.option_d }}</div>
-      <input type="radio" name="answer" value="D">
+      <input type="radio" name="answer" value="D" {% if question.user_answer == 'D' %}checked{% endif %}>
     </label>
   </div>
 
   <div class="actions" style="margin-top:14px;">
+    {% if has_prev %}
+      <button class="btn secondary" id="back-btn" title="Go to previous question">← Back</button>
+    {% endif %}
     <button class="btn" id="submit-answer">Submit Answer</button>
-    <button class="btn secondary" id="mark-review">Mark for Review</button>
     <div style="flex:1"></div>
     <div class="muted">Answered: <span id="answered-count">{{ answered_count }}</span> / <span id="total-count">{{ total_questions }}</span></div>
   </div>
 
-  <!-- helpful hidden dataset for base JS actions -->
+  <!-- Hidden form for auto-submit on timer expiry -->
+  <form id="auto-submit-form" method="post" action="{% url 'quizzes:auto_submit_quiz' attempt_id=quiz_attempt.id %}">
+    {% csrf_token %}
+  </form>
+
+  <!-- Helpful dataset for JS -->
   <script>
     document.body.dataset.quitUrl = "{% url 'quizzes:dashboard' %}";
     document.body.dataset.resultsUrl = "{% url 'quizzes:quiz_results' attempt_id=quiz_attempt.id %}";
-    document.body.dataset.reviewUrl = "{% url 'quizzes:show_question' attempt_id=quiz_attempt.id %}"; // placeholder
+    document.body.dataset.reviewUrl = "{% url 'quizzes:show_question' attempt_id=quiz_attempt.id %}";
+    document.body.dataset.backUrl = "{% url 'quizzes:previous_question' attempt_id=quiz_attempt.id %}";
   </script>
 {% endblock %}
 
@@ -66,31 +74,110 @@
   const csrftoken = getCookie('csrftoken');
 
   const submitUrl = "{% url 'quizzes:submit_answer' attempt_id=quiz_attempt.id %}";
-  const submitBtn = document.getElementById('submit-answer');
-  const optionsWrap = document.getElementById('options-wrap');
-  const answeredCountEl = document.getElementById('answered-count');
+  const backUrl = "{% url 'quizzes:previous_question' attempt_id=quiz_attempt.id %}";
+  const saveTimerUrl = "{% url 'quizzes:save_timer' attempt_id=quiz_attempt.id %}";
 
+  const submitBtn = document.getElementById('submit-answer');
+  const backBtn = document.getElementById('back-btn');
+  const optionsWrap = document.getElementById('options-wrap');
+
+  // CHANGE THIS LINE TO YOUR SIDEBAR TIMER ID
+  // From your screenshot, it's likely one of these — try them one by one:
+  const timerDisplay = document.querySelector('.sidebar-timer span') ||  // if it's in sidebar
+                       document.getElementById('remaining-time') ||
+                       document.getElementById('timer-remaining') ||
+                       document.getElementById('time-remaining') ||
+                       document.querySelector('[id*="timer"]') ||
+                       document.querySelector('[id*="remaining"]');
+
+  if (!timerDisplay) {
+      console.error("Timer display element not found! Check the ID in base_quiz.html");
+  }
+
+  let remainingTime = {{ remaining_seconds }};
+
+  function formatTime(seconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }
+
+  function updateDisplay() {
+      if (timerDisplay) {
+          timerDisplay.textContent = formatTime(remainingTime);
+      }
+  }
+
+  function saveRemainingTime() {
+      const formData = new FormData();
+      formData.append('remaining_seconds', remainingTime);
+      formData.append('csrfmiddlewaretoken', csrftoken);
+
+      if (navigator.sendBeacon) {
+          navigator.sendBeacon(saveTimerUrl, formData);
+      } else {
+          fetch(saveTimerUrl, {
+              method: 'POST',
+              body: formData,
+              credentials: 'same-origin',
+              keepalive: true,
+              headers: { 'X-CSRFToken': csrftoken }
+          });
+      }
+  }
+
+  // Save every 10 seconds
+  setInterval(() => {
+      if (remainingTime > 0) saveRemainingTime();
+  }, 10000);
+
+  // Save on tab close/navigate away
+  window.addEventListener('beforeunload', saveRemainingTime);
+
+  // Countdown
+  const countdown = setInterval(() => {
+      remainingTime--;
+      updateDisplay();
+
+      if (remainingTime <= 0) {
+          clearInterval(countdown);
+          document.getElementById('auto-submit-form').submit();
+      }
+  }, 1000);
+
+  updateDisplay();
+
+  // Rest of your answer submission logic (unchanged)
   function getSelectedValue(){
     const sel = document.querySelector('.option.selected input[type=radio]');
     return sel ? sel.value : null;
   }
 
-  // add click selection (in case base isn't loaded yet)
-  optionsWrap.querySelectorAll('.option').forEach(opt=>{
-    opt.addEventListener('click', ()=> {
-      optionsWrap.querySelectorAll('.option').forEach(o=>o.classList.remove('selected'));
+  optionsWrap.querySelectorAll('.option').forEach(opt => {
+    opt.addEventListener('click', () => {
+      optionsWrap.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
       opt.classList.add('selected');
       const inp = opt.querySelector('input[type=radio]');
-      if(inp) inp.checked = true;
+      if (inp) inp.checked = true;
     });
   });
 
-  submitBtn && submitBtn.addEventListener('click', async (e)=>{
+  if (backBtn) {
+    backBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.location.href = backUrl;
+    });
+  }
+
+  submitBtn && submitBtn.addEventListener('click', async (e) => {
     e.preventDefault();
     const answer = getSelectedValue();
-    if(!answer){
-      // small shake if no option
-      document.querySelector('.card').animate([{ transform:'translateX(-6px)' }, { transform:'translateX(6px)' }, { transform:'translateX(0)' }], { duration: 260 });
+    if (!answer) {
+      document.querySelector('.card')?.animate([
+        { transform: 'translateX(-6px)' },
+        { transform: 'translateX(6px)' },
+        { transform: 'translateX(0)' }
+      ], { duration: 260 });
       return;
     }
 
@@ -110,12 +197,6 @@
       const data = await resp.json();
 
       if (resp.ok && data.success) {
-        // update answered counter if provided
-        if (data.completed) {
-          window.location.href = data.redirect_url;
-          return;
-        }
-        // redirect to next question
         window.location.href = data.redirect_url;
       } else {
         alert("Error: " + (data.error || resp.statusText));
