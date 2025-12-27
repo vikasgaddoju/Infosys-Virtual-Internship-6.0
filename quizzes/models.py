@@ -89,7 +89,7 @@ class QuizAttempt(models.Model):
     current_question_index = models.SmallIntegerField(default=0)  # Track progress
     score = models.FloatField(default=0.0)
     
-    started_at = models.DateTimeField(auto_now_add=True)
+    started_at = models.DateTimeField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -188,6 +188,3 @@ class Concept(models.Model):
 
     def __str__(self):
         return f"{self.subcategory.name} - {self.name} ({self.difficulty})"
-        
-# Inside QuizAttempt model, add this line
-remaining_seconds = models.PositiveIntegerField(null=True, blank=True)
